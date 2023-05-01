@@ -1,31 +1,8 @@
 use std::u8;
 
-use crate::{Channels, Colorspace, ImgMetadata};
+use crate::{Channels, Colorspace, ImgMetadata, Operation, Pixel, QOI_OP_DIFF, QOI_OP_INDEX, QOI_OP_LUMA, QOI_OP_RGB, QOI_OP_RGBA, QOI_OP_RUN};
 
-#[derive(Eq, PartialEq, Debug)]
-enum Operation {
-    QoiOpRgb,
-    QoiOpRgba,
-    QoiOpIndex,
-    QoiOpDiff,
-    QoiOpLuma,
-    QoiOpRun,
-}
 
-const QOI_OP_RGB: u8 = 0b11111110;
-const QOI_OP_RGBA: u8 = 0b11111111;
-const QOI_OP_INDEX: u8 = 0b00;
-const QOI_OP_DIFF: u8 = 0b01;
-const QOI_OP_LUMA: u8 = 0b10;
-const QOI_OP_RUN: u8 = 0b11;
-
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
-struct Pixel {
-    r: u8,
-    g: u8,
-    b: u8,
-    a:u8,
-}
 
 pub(crate) fn add_header(bytes: &mut Vec<u8>, metadata: &ImgMetadata) {
     assert_eq!(bytes.len(), 0);
@@ -71,6 +48,17 @@ pub(crate) fn add_chunks(mut bytes: &mut Vec<u8>, pixels: &Vec<u8>, alpha_includ
         b: 0,
         a: 255,
     };
+
+    index[calculate_index(&previous_pixel)] = Some(previous_pixel.clone());
+
+    let zero_pixel = Pixel {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 0,
+    };
+
+    index[calculate_index(&zero_pixel)] = Some(zero_pixel.clone());
 
     let mut run_count: u8 = 0;
 
@@ -138,7 +126,8 @@ fn tag_byte(tag: u8, lower_bits: u8) -> u8 {
     (tag << 6) + lower_bits
 }
 
-fn calculate_index(pixel: &Pixel) -> usize {
+//todo - move the index into its own module
+pub fn calculate_index(pixel: &Pixel) -> usize {
     let index:u32 = (pixel.r as u32) * 3 + (pixel.g as u32) * 5 + (pixel.b as u32) * 7 + (pixel.a as u32) * 11;
     (index % 64) as usize
 }

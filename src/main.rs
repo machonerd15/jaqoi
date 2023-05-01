@@ -54,7 +54,7 @@ fn main() {
     let img;
 
     if ImageFormat::Qoi == config.input_image_format {
-        let (metadata, decoded_raw) = jaqoi::decode(fs::read(config.input_file_name).unwrap().to_vec());
+        let (metadata, decoded_raw) = jaqoi::decode(&fs::read(config.input_file_name).unwrap().to_vec());
         img = match metadata.channels{
             Channels::RGB => {image::DynamicImage::from(image::RgbImage::from_raw(metadata.width, metadata.height, decoded_raw).unwrap())}
             Channels::RGBA => {image::DynamicImage::from(image::RgbaImage::from_raw(metadata.width, metadata.height, decoded_raw).unwrap())}
@@ -86,6 +86,7 @@ fn main() {
                 bytes = img.as_rgb8().unwrap().as_raw();
             }
         }
+        // println!("Bytes: {:?}", bytes);
         let output_raw = jaqoi::encode(bytes, &metadata);
         fs::write(config.output_file_name, output_raw).expect("Error writing output file");
     } else {

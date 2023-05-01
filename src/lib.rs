@@ -1,21 +1,50 @@
 mod encoder;
 mod decoder;
 
+#[derive(Eq, PartialEq, Debug)]
 pub enum Channels {
     RGB,
     RGBA
 }
 
+#[derive(Eq, PartialEq, Debug)]
 pub enum Colorspace {
     SrgbLinearAlpha,
     AllLinearAlpha
 }
 
+#[derive(Eq, PartialEq, Debug)]
 pub struct ImgMetadata {
     pub width: u32,
     pub height: u32,
     pub channels: Channels,
     pub colorspace: Colorspace
+}
+
+#[derive(Eq, PartialEq, Debug)]
+enum Operation {
+    QoiOpRgb,
+    QoiOpRgba,
+    QoiOpIndex,
+    QoiOpDiff,
+    QoiOpLuma,
+    QoiOpRun,
+}
+
+const QOI_OP_RGB: u8 = 0b11111110;
+const QOI_OP_RGBA: u8 = 0b11111111;
+const QOI_OP_INDEX: u8 = 0b00;
+const QOI_OP_DIFF: u8 = 0b01;
+const QOI_OP_LUMA: u8 = 0b10;
+const QOI_OP_RUN: u8 = 0b11;
+
+//todo - make private again once index calculation is moved
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct Pixel {
+    r: u8,
+    g: u8,
+    b: u8,
+    a:u8,
 }
 
 
@@ -36,14 +65,8 @@ pub fn encode(rgb_pixels: &Vec<u8>, metadata: &ImgMetadata) -> Vec<u8> {
 }
 
 
-pub fn decode(_raw_file_bytes: Vec<u8>) -> (ImgMetadata, Vec<u8>) {
-    (ImgMetadata{
-        width: 0,
-        height: 0,
-        channels: Channels::RGB,
-        colorspace: Colorspace::SrgbLinearAlpha,
-    }, vec!(0))
-
+pub fn decode(raw_file_bytes: &Vec<u8>) -> (ImgMetadata, Vec<u8>) {
+    return decoder::decode(&raw_file_bytes);
 }
 
 #[cfg(test)]
@@ -82,5 +105,10 @@ mod tests {
         let output_image = reader.decode().expect("Decode should be successful");
         let output_image = output_image.as_rgb8().expect("Should be rgb8");
         assert!(source_image.eq(output_image));
+    }
+
+    #[test]
+    fn test_decode() {
+
     }
 }
